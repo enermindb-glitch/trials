@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login | CPL</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="card">
+  <h1>Player Login</h1>
+  <p class="subtitle">Log in with your name, email, or CPL number</p>
+
+  <form id="loginForm">
+    <label for="loginId">Name / Email / CPL Number</label>
+    <input type="text" id="loginId" required placeholder="e.g. CPL00001" />
+
+    <label for="password">Password</label>
+    <input type="password" id="password" required />
+
+    <button type="submit" id="submitBtn">Log In</button>
+    <div id="msg" class="msg"></div>
+  </form>
+
+  <div class="links">
+    New player? <a href="index.html">Register here</a>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const form = document.getElementById('loginForm');
+const msg = document.getElementById('msg');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = '';
+  msg.className = 'msg';
+
+  const loginId = document.getElementById('loginId').value.trim();
+  const password = document.getElementById('password').value;
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner"></span>Logging in...';
+
+  try {
+    const result = await callApi('login', { loginId, password });
+    if (result.ok) {
+      setSession(result.profile);
+      msg.textContent = 'Welcome back, ' + result.profile.Name + '! Redirecting...';
+      msg.classList.add('success');
+      setTimeout(() => { window.location.href = 'profile.html'; }, 1000);
+    } else {
+      msg.textContent = result.error || 'Login failed.';
+      msg.classList.add('error');
+    }
+  } catch (err) {
+    msg.textContent = 'Network error: ' + err.message;
+    msg.classList.add('error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Log In';
+  }
+});
+</script>
+</body>
+</html>
