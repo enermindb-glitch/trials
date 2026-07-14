@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Profile | CPL</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="card">
+  <div class="profile-header">
+    <img id="preview" class="avatar-preview" />
+  </div>
+  <div id="cplBadge" class="cpl-badge"></div>
+
+  <form id="profileForm">
+    <label for="image">Change Profile Image</label>
+    <input type="file" id="image" accept="image/*" />
+
+    <label for="name">Full Name</label>
+    <input type="text" id="name" required />
+
+    <label for="email">Email</label>
+    <input type="email" id="email" required />
+
+    <label for="newPassword">New Password (leave blank to keep current)</label>
+    <input type="password" id="newPassword" minlength="6" />
+
+    <label for="currentPassword">Current Password (required to save changes)</label>
+    <input type="password" id="currentPassword" required />
+
+    <button type="submit" id="submitBtn">Save Changes</button>
+    <div id="msg" class="msg"></div>
+  </form>
+
+  <button class="secondary" id="logoutBtn" style="margin-top:10px;">Log Out</button>
+</div>
+
+<script src="config.js"></script>
+<script>
+const session = getSession();
+if (!session) {
+  window.location.href = 'login.html';
+}
+
+const form = document.getElementById('profileForm');
+const msg = document.getElementById('msg');
+const submitBtn = document.getElementById('submitBtn');
+const imageInput = document.getElementById('image');
+const preview = document.getElementById('preview');
+const cplBadge = document.getElementById('cplBadge');
+
+function fillForm(profile) {
+  cplBadge.textContent = 'CPL Number: ' + profile.CPLNumber;
+  document.getElementById('name').value = profile.Name || '';
+  document.getElementById('email').value = profile.Email || '';
+  preview.src = profile.ImageUrl || 'https://via.placeholder.com/96?text=No+Image';
+}
+
+fillForm(session);
+
+// Refresh from server in case data changed elsewhere
+(async () => {
+  const result = await callApi('getProfile', { cplNumber: session.CPLNumber });
+  if (result.ok) {
+    setSession(result.profile);
+    fillForm(result.profile);
+  }
+})();
+
+imageInput.addEventListener('change', () => {
+  const file = imageInput.files[0];
+  if (file) preview.src = URL.createObjectURL(file);
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = '';
+  msg.className = 'msg';
+
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const newPassword = document.getElementById('newPassword').value;
+  const currentPassword = document.getElementById('currentPassword').value;
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+  try {
+    const imageBase64 = await fileToBase64(imageInput.files[0]);
+    const payload = {
+      cplNumber: session.CPLNumber,
+      currentPassword,
+      name,
+      email
+    };
+    if (newPassword) payload.newPassword = newPassword;
+    if (imageBase64) payload.image = imageBase64;
+
+    const result = await callApi('updateProfile', payload);
+    if (result.ok) {
+      setSession(result.profile);
+      fillForm(result.profile);
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      msg.textContent = 'Profile updated successfully.';
+      msg.classList.add('success');
+    } else {
+      msg.textContent = result.error || 'Update failed.';
+      msg.classList.add('error');
+    }
+  } catch (err) {
+    msg.textContent = 'Network error: ' + err.message;
+    msg.classList.add('error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save Changes';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  clearSession();
+  window.location.href = 'login.html';
+});
+</script>
+</body>
+</html>
