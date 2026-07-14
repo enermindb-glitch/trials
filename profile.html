@@ -3,38 +3,73 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>My Profile | CPL</title>
+<title>My Profile | Chuka Premier League</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="card">
-  <div class="profile-header">
-    <img id="preview" class="avatar-preview" />
+
+<header class="site">
+  <div class="logo-mark">CPL</div>
+  <div class="brand">
+    <strong>Chuka Premier League</strong>
+    <span>Player Portal</span>
   </div>
-  <div id="cplBadge" class="cpl-badge"></div>
+  <nav>
+    <a href="profile.html" aria-current="page">Profile</a>
+    <a href="#" id="logoutLink">Log Out</a>
+  </nav>
+</header>
 
-  <form id="profileForm">
-    <label for="image">Change Profile Image</label>
-    <input type="file" id="image" accept="image/*" />
+<main class="narrow">
+  <span class="eyebrow">Spec 03 — Player Record</span>
+  <h1>My Profile</h1>
+  <p>View your player record and update your details or profile photo.</p>
 
-    <label for="name">Full Name</label>
-    <input type="text" id="name" required />
+  <div class="panel">
+    <div class="player-header">
+      <img id="photo" class="photo" alt="Profile photo" style="display:none;" />
+      <div id="photoFallback" class="avatar-fallback">?</div>
+      <div class="meta">
+        <div class="cpl-number" id="cplBadge">CPL Number: —</div>
+        <div id="metaName" style="color:var(--muted);font-size:0.9rem;"></div>
+      </div>
+    </div>
+  </div>
 
-    <label for="email">Email</label>
-    <input type="email" id="email" required />
+  <div class="panel">
+    <form id="profileForm">
+      <label for="image">Update Profile Image <span class="opt">(optional)</span></label>
+      <input type="file" id="image" accept="image/*" />
+      <div class="avatar-preview-wrap">
+        <img id="preview" class="avatar-preview" alt="New photo preview" />
+      </div>
 
-    <label for="newPassword">New Password (leave blank to keep current)</label>
-    <input type="password" id="newPassword" minlength="6" />
+      <label for="name">Full Name</label>
+      <input type="text" id="name" required />
 
-    <label for="currentPassword">Current Password (required to save changes)</label>
-    <input type="password" id="currentPassword" required />
+      <label for="email">Email</label>
+      <input type="email" id="email" required />
 
-    <button type="submit" id="submitBtn">Save Changes</button>
-    <div id="msg" class="msg"></div>
-  </form>
+      <label for="newPassword">New Password <span class="opt">(leave blank to keep current)</span></label>
+      <div class="pw-wrap">
+        <input type="password" id="newPassword" minlength="6" placeholder="At least 6 characters" />
+        <button type="button" class="pw-toggle" data-target="newPassword">Show</button>
+      </div>
 
-  <button class="secondary" id="logoutBtn" style="margin-top:10px;">Log Out</button>
-</div>
+      <label for="currentPassword">Current Password <span class="opt">(required to save)</span></label>
+      <div class="pw-wrap">
+        <input type="password" id="currentPassword" required />
+        <button type="button" class="pw-toggle" data-target="currentPassword">Show</button>
+      </div>
+
+      <button type="submit" id="submitBtn">Save Changes</button>
+      <button type="button" class="btn secondary" id="logoutBtn">Log Out</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+</main>
+
+<footer>Chuka Premier League &mdash; Player Registry System</footer>
 
 <script src="config.js"></script>
 <script>
@@ -48,13 +83,27 @@ const msg = document.getElementById('msg');
 const submitBtn = document.getElementById('submitBtn');
 const imageInput = document.getElementById('image');
 const preview = document.getElementById('preview');
+const photo = document.getElementById('photo');
+const photoFallback = document.getElementById('photoFallback');
 const cplBadge = document.getElementById('cplBadge');
+const metaName = document.getElementById('metaName');
+const nameInput = document.getElementById('name');
 
-function fillForm(profile) {
-  cplBadge.textContent = 'CPL Number: ' + profile.CPLNumber;
-  document.getElementById('name').value = profile.Name || '';
-  document.getElementById('email').value = profile.Email || '';
-  preview.src = profile.ImageUrl || 'https://via.placeholder.com/96?text=No+Image';
+function fillForm(p) {
+  cplBadge.textContent = 'CPL Number: ' + p.CPLNumber;
+  metaName.textContent = p.Name + ' — ' + p.Email;
+  nameInput.value = p.Name || '';
+  document.getElementById('email').value = p.Email || '';
+
+  if (p.ImageUrl) {
+    photo.src = p.ImageUrl;
+    photo.style.display = 'block';
+    photoFallback.style.display = 'none';
+  } else {
+    photo.style.display = 'none';
+    photoFallback.style.display = 'flex';
+    photoFallback.textContent = (p.Name || '?').charAt(0).toUpperCase();
+  }
 }
 
 fillForm(session);
@@ -70,30 +119,43 @@ fillForm(session);
 
 imageInput.addEventListener('change', () => {
   const file = imageInput.files[0];
-  if (file) preview.src = URL.createObjectURL(file);
+  if (file) {
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
 });
+
+document.querySelectorAll('.pw-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    const isHidden = target.type === 'password';
+    target.type = isHidden ? 'text' : 'password';
+    btn.textContent = isHidden ? 'Hide' : 'Show';
+  });
+});
+
+function showMsg(text, ok) {
+  msg.textContent = text;
+  msg.className = 'msg show ' + (ok ? 'ok' : 'err');
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  msg.textContent = '';
   msg.className = 'msg';
 
-  const name = document.getElementById('name').value.trim();
+  const name = nameInput.value.trim();
   const email = document.getElementById('email').value.trim();
   const newPassword = document.getElementById('newPassword').value;
   const currentPassword = document.getElementById('currentPassword').value;
 
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<span class="spinner"></span>Saving...';
+  submitBtn.textContent = 'Saving...';
 
   try {
     const imageBase64 = await fileToBase64(imageInput.files[0]);
-    const payload = {
-      cplNumber: session.CPLNumber,
-      currentPassword,
-      name,
-      email
-    };
+    const payload = { cplNumber: session.CPLNumber, currentPassword, name, email };
     if (newPassword) payload.newPassword = newPassword;
     if (imageBase64) payload.image = imageBase64;
 
@@ -101,27 +163,29 @@ form.addEventListener('submit', async (e) => {
     if (result.ok) {
       setSession(result.profile);
       fillForm(result.profile);
+      imageInput.value = '';
+      preview.style.display = 'none';
       document.getElementById('currentPassword').value = '';
       document.getElementById('newPassword').value = '';
-      msg.textContent = 'Profile updated successfully.';
-      msg.classList.add('success');
+      showMsg('Profile updated successfully.', true);
     } else {
-      msg.textContent = result.error || 'Update failed.';
-      msg.classList.add('error');
+      showMsg(result.error || 'Update failed.', false);
     }
   } catch (err) {
-    msg.textContent = 'Network error: ' + err.message;
-    msg.classList.add('error');
+    showMsg('Network error: ' + err.message, false);
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Save Changes';
   }
 });
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
+function doLogout(e) {
+  if (e) e.preventDefault();
   clearSession();
   window.location.href = 'login.html';
-});
+}
+document.getElementById('logoutBtn').addEventListener('click', doLogout);
+document.getElementById('logoutLink').addEventListener('click', doLogout);
 </script>
 </body>
 </html>
