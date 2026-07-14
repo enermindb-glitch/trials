@@ -3,39 +3,64 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Player Registration | CPL</title>
+<title>Player Registration | Chuka Premier League</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<div class="card">
-  <h1>Player Registration</h1>
-  <p class="subtitle">Create your CPL player profile</p>
 
-  <form id="regForm">
-    <label for="image">Profile Image</label>
-    <input type="file" id="image" accept="image/*" />
-    <img id="preview" class="avatar-preview" style="display:none" />
-
-    <label for="name">Full Name</label>
-    <input type="text" id="name" required />
-
-    <label for="email">Email</label>
-    <input type="email" id="email" required />
-
-    <label for="password">Password</label>
-    <input type="password" id="password" required minlength="6" />
-
-    <label for="confirmPassword">Confirm Password</label>
-    <input type="password" id="confirmPassword" required minlength="6" />
-
-    <button type="submit" id="submitBtn">Register</button>
-    <div id="msg" class="msg"></div>
-  </form>
-
-  <div class="links">
-    Already have an account? <a href="login.html">Log in</a>
+<header class="site">
+  <div class="logo-mark">CPL</div>
+  <div class="brand">
+    <strong>Chuka Premier League</strong>
+    <span>Player Portal</span>
   </div>
-</div>
+  <nav>
+    <a href="index.html" aria-current="page">Register</a>
+    <a href="login.html">Login</a>
+  </nav>
+</header>
+
+<main class="narrow">
+  <span class="eyebrow">Spec 01 — Player Intake</span>
+  <h1>Player Registration</h1>
+  <p>Fill in your details to create a Chuka Premier League player profile and receive your CPL number.</p>
+
+  <div class="panel">
+    <form id="regForm">
+      <label for="image">Profile Image <span class="opt">(optional)</span></label>
+      <input type="file" id="image" accept="image/*" />
+      <div class="avatar-preview-wrap">
+        <img id="preview" class="avatar-preview" alt="Profile preview" />
+        <div id="fallback" class="avatar-fallback">?</div>
+      </div>
+
+      <label for="name">Full Name</label>
+      <input type="text" id="name" placeholder="e.g. Kevin Mwangi" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="you@example.com" required />
+
+      <label for="password">Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="password" required minlength="6" placeholder="At least 6 characters" />
+        <button type="button" class="pw-toggle" data-target="password">Show</button>
+      </div>
+
+      <label for="confirmPassword">Confirm Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="confirmPassword" required minlength="6" placeholder="Re-enter password" />
+        <button type="button" class="pw-toggle" data-target="confirmPassword">Show</button>
+      </div>
+
+      <button type="submit" id="submitBtn">Register</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+
+  <p style="text-align:center;">Already registered? <a href="login.html">Log in here</a></p>
+</main>
+
+<footer>Chuka Premier League &mdash; Player Registry System</footer>
 
 <script src="config.js"></script>
 <script>
@@ -44,33 +69,57 @@ const msg = document.getElementById('msg');
 const submitBtn = document.getElementById('submitBtn');
 const imageInput = document.getElementById('image');
 const preview = document.getElementById('preview');
+const fallback = document.getElementById('fallback');
+const nameInput = document.getElementById('name');
+
+function updateFallbackInitial() {
+  const n = nameInput.value.trim();
+  fallback.textContent = n ? n.charAt(0).toUpperCase() : '?';
+}
+nameInput.addEventListener('input', updateFallbackInitial);
 
 imageInput.addEventListener('change', () => {
   const file = imageInput.files[0];
   if (file) {
     preview.src = URL.createObjectURL(file);
     preview.style.display = 'block';
+    fallback.style.display = 'none';
+  } else {
+    preview.style.display = 'none';
+    fallback.style.display = 'flex';
   }
 });
 
+document.querySelectorAll('.pw-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = document.getElementById(btn.dataset.target);
+    const isHidden = target.type === 'password';
+    target.type = isHidden ? 'text' : 'password';
+    btn.textContent = isHidden ? 'Hide' : 'Show';
+  });
+});
+
+function showMsg(text, ok) {
+  msg.textContent = text;
+  msg.className = 'msg show ' + (ok ? 'ok' : 'err');
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  msg.textContent = '';
   msg.className = 'msg';
 
-  const name = document.getElementById('name').value.trim();
+  const name = nameInput.value.trim();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirmPassword').value;
 
   if (password !== confirmPassword) {
-    msg.textContent = 'Passwords do not match.';
-    msg.classList.add('error');
+    showMsg('Passwords do not match.', false);
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<span class="spinner"></span>Registering...';
+  submitBtn.textContent = 'Registering...';
 
   try {
     const imageBase64 = await fileToBase64(imageInput.files[0]);
@@ -78,16 +127,13 @@ form.addEventListener('submit', async (e) => {
 
     if (result.ok) {
       setSession(result.profile);
-      msg.textContent = 'Registered! Your CPL number is ' + result.profile.CPLNumber + '. Redirecting...';
-      msg.classList.add('success');
+      showMsg('Registered! Your CPL number is ' + result.profile.CPLNumber + '. Redirecting...', true);
       setTimeout(() => { window.location.href = 'profile.html'; }, 1500);
     } else {
-      msg.textContent = result.error || 'Registration failed.';
-      msg.classList.add('error');
+      showMsg(result.error || 'Registration failed.', false);
     }
   } catch (err) {
-    msg.textContent = 'Network error: ' + err.message;
-    msg.classList.add('error');
+    showMsg('Network error: ' + err.message, false);
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'Register';
