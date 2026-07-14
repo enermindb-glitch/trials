@@ -1,6 +1,6 @@
 // Paste the Web App URL you get after deploying setup.gs (Deploy -> New deployment -> Web app).
 // It looks like: https://script.google.com/macros/s/AKfycb.../exec
-const APP_URL = 'https://script.google.com/macros/s/AKfycbzlpsXekaaWtl3jvcd1zPCNm6wKkDjfIQZvBGZGwDwjntrCRTZi1EgzPFw11ETzpUYJ/exec';
+const APP_URL = 'https://script.google.com/macros/s/AKfycbzltr6RpPCOTkuIj6HM9kkTJFI9_jNe_iGJaDwEpxYVcevcILqGMhweQ-NFfbEreAsv/exec';
 
 // Generic helper to call the backend. Uses text/plain content-type on purpose
 // so the browser sends a "simple" request and Apps Script doesn't choke on CORS preflight.
